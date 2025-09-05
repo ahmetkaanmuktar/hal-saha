@@ -92,7 +92,8 @@ export function BookingDrawer({ open, onOpenChange, selectedSlot, onBookingSucce
               className="w-16 h-16 object-contain"
               onError={(e) => {
                 e.currentTarget.style.display = 'none'
-                e.currentTarget.nextElementSibling.style.display = 'block'
+                const nextElement = e.currentTarget.nextElementSibling as HTMLElement
+                if (nextElement) nextElement.style.display = 'block'
               }}
             />
             <span className="text-2xl text-white hidden">⚽</span>
