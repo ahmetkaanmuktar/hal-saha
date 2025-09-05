@@ -4,6 +4,32 @@ import { slotsQuerySchema } from '@/lib/validations'
 import { getTurkeyTime, generateTimeSlots, isTimeSlotPast } from '@/lib/date-utils'
 import dayjs from 'dayjs'
 
+function getDemoSlots(fromDate: string, dayCount: number) {
+  const startDate = getTurkeyTime(fromDate).startOf('day')
+  const result = []
+
+  for (let i = 0; i < dayCount; i++) {
+    const currentDate = startDate.add(i, 'day')
+    const dateStr = currentDate.format('YYYY-MM-DD')
+    
+    // Demo slot'lar üret (09:00-03:00)
+    const timeSlots = generateTimeSlots('09:00', '03:00', 60)
+    
+    const slots = timeSlots.map(slot => ({
+      start: slot.start,
+      end: slot.end,
+      status: isTimeSlotPast(dateStr, slot.start) ? 'past' : 'available'
+    }))
+
+    result.push({
+      date: dateStr,
+      slots
+    })
+  }
+
+  return result
+}
+
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
@@ -16,6 +42,11 @@ export async function GET(request: NextRequest) {
         { error: 'Geçersiz parametreler', details: query.error.errors },
         { status: 400 }
       )
+    }
+
+    // Vercel'de veritabanı sorunu varsa demo data döndür
+    if (!process.env.DATABASE_URL || process.env.DATABASE_URL.includes('dummy')) {
+      return NextResponse.json(getDemoSlots(query.data.from, query.data.days))
     }
 
     const { from: fromDate, days: dayCount } = query.data
