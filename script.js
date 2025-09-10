@@ -29,7 +29,15 @@ document.addEventListener('DOMContentLoaded', function() {
     generateTimeSlots();
     setupEventListeners();
     addInteractiveAnimations();
+    showWelcomeMessage();
 });
+
+// Show welcome message
+function showWelcomeMessage() {
+    setTimeout(() => {
+        showNotification('🏛️ Hatay Büyükşehir Belediyesi\'ne Hoş Geldiniz! Ücretsiz halısaha rezervasyonunuzu yapabilirsiniz.', 'success');
+    }, 1000);
+}
 
 // Set minimum date to today
 function initializeDatePicker() {
@@ -107,6 +115,9 @@ function selectTimeSlot(slot, element) {
     
     updateSelectedInfo();
     updateBookButton();
+    
+    // Show selection confirmation
+    showNotification(`✅ ${slot.time} saati seçildi! Formu doldurup rezervasyonunuzu tamamlayabilirsiniz.`, 'success');
 }
 
 // Create celebration effect
@@ -115,29 +126,31 @@ function createCelebrationEffect(element) {
     const centerX = rect.left + rect.width / 2;
     const centerY = rect.top + rect.height / 2;
     
-    for (let i = 0; i < 10; i++) {
+    for (let i = 0; i < 12; i++) {
         createParticle(centerX, centerY);
     }
 }
 
 function createParticle(x, y) {
     const particle = document.createElement('div');
+    const colors = ['#f39c12', '#e74c3c', '#3498db', '#27ae60', '#9b59b6'];
     particle.style.cssText = `
         position: fixed;
-        width: 6px;
-        height: 6px;
-        background: #f39c12;
+        width: 8px;
+        height: 8px;
+        background: ${colors[Math.floor(Math.random() * colors.length)]};
         border-radius: 50%;
         pointer-events: none;
         z-index: 9999;
         left: ${x}px;
         top: ${y}px;
+        box-shadow: 0 0 6px rgba(255,255,255,0.8);
     `;
     
     document.body.appendChild(particle);
     
     const angle = Math.random() * 2 * Math.PI;
-    const velocity = 100 + Math.random() * 100;
+    const velocity = 120 + Math.random() * 80;
     const vx = Math.cos(angle) * velocity;
     const vy = Math.sin(angle) * velocity;
     
@@ -147,8 +160,8 @@ function createParticle(x, y) {
     
     const animate = () => {
         posX += vx * 0.016;
-        posY += vy * 0.016 + 50 * 0.016; // gravity
-        opacity -= 0.02;
+        posY += vy * 0.016 + 60 * 0.016; // gravity
+        opacity -= 0.025;
         
         particle.style.transform = `translate(${posX}px, ${posY}px)`;
         particle.style.opacity = opacity;
@@ -203,8 +216,10 @@ function updateBookButton() {
     
     if (canBook) {
         bookButton.style.animation = 'glow 2s ease-in-out infinite alternate';
+        bookButton.innerHTML = '<i class="fas fa-check"></i> 🎉 Rezervasyonu Tamamla';
     } else {
         bookButton.style.animation = '';
+        bookButton.innerHTML = '<i class="fas fa-check"></i> Rezervasyonu Tamamla';
     }
 }
 
@@ -226,6 +241,8 @@ function setupEventListeners() {
         
         // Simulate different availability for different dates
         simulateAvailabilityForDate(selectedDate);
+        
+        showNotification(`📅 ${formatDate(selectedDate)} tarihi seçildi!`, 'info');
     });
     
     // Form input handlers with real-time validation
@@ -264,10 +281,10 @@ function validateField(field) {
     
     if (isValid) {
         field.style.borderColor = '#27ae60';
-        field.style.boxShadow = '0 0 10px rgba(39, 174, 96, 0.3)';
+        field.style.boxShadow = '0 0 15px rgba(39, 174, 96, 0.3)';
     } else {
         field.style.borderColor = '#e74c3c';
-        field.style.boxShadow = '0 0 10px rgba(231, 76, 60, 0.3)';
+        field.style.boxShadow = '0 0 15px rgba(231, 76, 60, 0.3)';
     }
 }
 
@@ -309,8 +326,8 @@ function simulateAvailabilityForDate(date) {
     
     // Always keep some slots available
     const availableSlots = timeSlots.filter(slot => slot.available);
-    if (availableSlots.length < 4) {
-        for (let i = 0; i < 4 && i < timeSlots.length; i++) {
+    if (availableSlots.length < 5) {
+        for (let i = 0; i < 5 && i < timeSlots.length; i++) {
             timeSlots[i].available = true;
         }
     }
@@ -325,6 +342,7 @@ function simulateAvailabilityForDate(date) {
             selectedPrice = 0;
             updateSelectedInfo();
             updateBookButton();
+            showNotification('⚠️ Seçtiğiniz saat artık müsait değil. Lütfen başka bir saat seçin.', 'warning');
         }
     }
 }
@@ -334,7 +352,7 @@ function handleFormSubmission(e) {
     e.preventDefault();
     
     if (!selectedDate || !selectedTime) {
-        showNotification('Lütfen tarih ve saat seçiniz!', 'error');
+        showNotification('❌ Lütfen tarih ve saat seçiniz!', 'error');
         return;
     }
     
@@ -361,19 +379,27 @@ function handleFormSubmission(e) {
 function showNotification(message, type = 'info') {
     const notification = document.createElement('div');
     notification.className = `notification ${type}`;
-    notification.textContent = message;
+    notification.innerHTML = `
+        <i class="fas ${getNotificationIcon(type)}"></i>
+        <span>${message}</span>
+    `;
     notification.style.cssText = `
         position: fixed;
         top: 20px;
         right: 20px;
         padding: 15px 25px;
-        border-radius: 10px;
+        border-radius: 12px;
         color: white;
         font-weight: 600;
         z-index: 10000;
         animation: slideInRight 0.3s ease-out;
-        background: ${type === 'error' ? '#e74c3c' : '#3498db'};
-        box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        background: ${getNotificationColor(type)};
+        box-shadow: 0 8px 25px rgba(0,0,0,0.2);
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        max-width: 400px;
+        backdrop-filter: blur(10px);
     `;
     
     document.body.appendChild(notification);
@@ -381,9 +407,11 @@ function showNotification(message, type = 'info') {
     setTimeout(() => {
         notification.style.animation = 'slideOutRight 0.3s ease-out';
         setTimeout(() => {
-            document.body.removeChild(notification);
+            if (document.body.contains(notification)) {
+                document.body.removeChild(notification);
+            }
         }, 300);
-    }, 3000);
+    }, 4000);
     
     // Add CSS for notification animations
     if (!document.getElementById('notification-styles')) {
@@ -403,10 +431,28 @@ function showNotification(message, type = 'info') {
     }
 }
 
+function getNotificationIcon(type) {
+    switch(type) {
+        case 'success': return 'fa-check-circle';
+        case 'error': return 'fa-times-circle';
+        case 'warning': return 'fa-exclamation-triangle';
+        default: return 'fa-info-circle';
+    }
+}
+
+function getNotificationColor(type) {
+    switch(type) {
+        case 'success': return 'linear-gradient(45deg, #27ae60, #2ecc71)';
+        case 'error': return 'linear-gradient(45deg, #e74c3c, #c0392b)';
+        case 'warning': return 'linear-gradient(45deg, #f39c12, #e67e22)';
+        default: return 'linear-gradient(45deg, #3498db, #2980b9)';
+    }
+}
+
 // Show loading state
 function showLoadingState() {
     const bookButton = document.querySelector('.book-btn');
-    bookButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Rezervasyon yapılıyor...';
+    bookButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 🏛️ Hatay Büyükşehir\'de rezervasyon yapılıyor...';
     bookButton.disabled = true;
     bookButton.style.background = 'linear-gradient(45deg, #f39c12, #e67e22)';
 }
@@ -430,10 +476,16 @@ function showSuccessModal(reservationData) {
         <strong>📱 Telefon:</strong> ${reservationData.phone}<br>
         <strong>📅 Tarih:</strong> ${formatDate(reservationData.date)}<br>
         <strong>⏰ Saat:</strong> ${reservationData.time}<br>
-        <strong>💰 Ücret:</strong> ÜCRETSİZ (Hatay Büyükşehir Belediyesi)<br>
+        <strong>💰 Ücret:</strong> <span style="color: #27ae60; font-weight: bold;">ÜCRETSİZ</span> (Hatay Büyükşehir Belediyesi Hizmeti)<br>
         ${reservationData.notes ? `<strong>📝 Not:</strong> ${reservationData.notes}<br>` : ''}
         <br>
-        <small style="color: #7f8c8d;">🎫 Rezervasyon kodu: #${generateReservationCode()}</small>
+        <div style="background: linear-gradient(45deg, #3498db, #2980b9); color: white; padding: 10px; border-radius: 8px; text-align: center;">
+            <strong>🎫 Rezervasyon Kodu: #${generateReservationCode()}</strong>
+        </div>
+        <br>
+        <small style="color: #7f8c8d;">
+            <i class="fas fa-info-circle"></i> Bu kodu tesise gelirken yanınızda bulundurunuz.
+        </small>
     `;
     
     modal.style.display = 'block';
@@ -445,27 +497,31 @@ function showSuccessModal(reservationData) {
     }
     generateTimeSlots();
     
-    // Add confetti effect
-    createConfetti();
+    // Add mega confetti effect
+    createMegaConfetti();
+    
+    // Play success sound (if available)
+    playSuccessSound();
 }
 
-// Create confetti effect
-function createConfetti() {
-    const colors = ['#f39c12', '#e74c3c', '#3498db', '#27ae60', '#9b59b6'];
+// Create mega confetti effect
+function createMegaConfetti() {
+    const colors = ['#f39c12', '#e74c3c', '#3498db', '#27ae60', '#9b59b6', '#e67e22', '#1abc9c'];
     
-    for (let i = 0; i < 50; i++) {
+    for (let i = 0; i < 80; i++) {
         setTimeout(() => {
             const confetti = document.createElement('div');
             confetti.style.cssText = `
                 position: fixed;
-                width: 10px;
-                height: 10px;
+                width: ${8 + Math.random() * 6}px;
+                height: ${8 + Math.random() * 6}px;
                 background: ${colors[Math.floor(Math.random() * colors.length)]};
                 top: -10px;
                 left: ${Math.random() * window.innerWidth}px;
                 z-index: 10000;
                 pointer-events: none;
                 border-radius: 50%;
+                box-shadow: 0 0 10px rgba(255,255,255,0.8);
             `;
             
             document.body.appendChild(confetti);
@@ -473,9 +529,9 @@ function createConfetti() {
             let posY = -10;
             let posX = parseFloat(confetti.style.left);
             let rotation = 0;
-            const fallSpeed = 2 + Math.random() * 3;
-            const rotationSpeed = (Math.random() - 0.5) * 10;
-            const drift = (Math.random() - 0.5) * 2;
+            const fallSpeed = 2 + Math.random() * 4;
+            const rotationSpeed = (Math.random() - 0.5) * 15;
+            const drift = (Math.random() - 0.5) * 3;
             
             const fall = () => {
                 posY += fallSpeed;
@@ -486,24 +542,50 @@ function createConfetti() {
                 confetti.style.left = posX + 'px';
                 confetti.style.transform = `rotate(${rotation}deg)`;
                 
-                if (posY < window.innerHeight) {
+                if (posY < window.innerHeight + 20) {
                     requestAnimationFrame(fall);
                 } else {
-                    document.body.removeChild(confetti);
+                    if (document.body.contains(confetti)) {
+                        document.body.removeChild(confetti);
+                    }
                 }
             };
             
             fall();
-        }, i * 50);
+        }, i * 80);
+    }
+}
+
+// Play success sound
+function playSuccessSound() {
+    try {
+        // Create audio context for success sound
+        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        const oscillator = audioContext.createOscillator();
+        const gainNode = audioContext.createGain();
+        
+        oscillator.connect(gainNode);
+        gainNode.connect(audioContext.destination);
+        
+        oscillator.frequency.value = 800;
+        gainNode.gain.value = 0.1;
+        
+        oscillator.start();
+        oscillator.stop(audioContext.currentTime + 0.2);
+    } catch (e) {
+        // Audio not supported, ignore
     }
 }
 
 // Generate reservation code
 function generateReservationCode() {
     const prefix = 'HTY';
-    const timestamp = Date.now().toString().slice(-6);
-    const random = Math.random().toString(36).substr(2, 3).toUpperCase();
-    return `${prefix}${timestamp}${random}`;
+    const date = new Date();
+    const dateStr = date.getFullYear().toString().slice(-2) + 
+                   (date.getMonth() + 1).toString().padStart(2, '0') + 
+                   date.getDate().toString().padStart(2, '0');
+    const random = Math.random().toString(36).substr(2, 4).toUpperCase();
+    return `${prefix}${dateStr}${random}`;
 }
 
 // Close modal
@@ -540,6 +622,8 @@ function resetForm() {
         field.style.borderColor = '#e9ecef';
         field.style.boxShadow = '';
     });
+    
+    showNotification('🔄 Form sıfırlandı. Yeni rezervasyon yapabilirsiniz!', 'info');
 }
 
 // Scroll to booking section
@@ -548,6 +632,10 @@ function scrollToBooking() {
         behavior: 'smooth',
         block: 'start'
     });
+    
+    // Add attention effect to booking section
+    const bookingSection = document.getElementById('booking');
+    bookingSection.style.animation = 'pulse 1s ease-in-out 2';
 }
 
 // Close modal when clicking outside
@@ -560,7 +648,7 @@ window.addEventListener('click', function(e) {
 
 // Add interactive animations
 function addInteractiveAnimations() {
-    // Parallax effect for hero section
+    // Enhanced parallax effect for hero section
     window.addEventListener('scroll', function() {
         const scrolled = window.pageYOffset;
         const parallax = document.querySelector('.hero-bg');
@@ -569,13 +657,14 @@ function addInteractiveAnimations() {
             parallax.style.transform = `translateY(${speed}px) scale(1.1)`;
         }
         
-        // Header background opacity
+        // Header background opacity with blur
         const header = document.querySelector('header');
         const opacity = Math.min(scrolled / 100, 0.95);
         header.style.background = `linear-gradient(135deg, rgba(30, 60, 114, ${opacity}), rgba(42, 82, 152, ${opacity}))`;
+        header.style.backdropFilter = `blur(${Math.min(scrolled / 10, 15)}px)`;
     });
     
-    // Animate elements on scroll
+    // Animate elements on scroll with enhanced observer
     const observerOptions = {
         threshold: 0.1,
         rootMargin: '0px 0px -50px 0px'
@@ -628,9 +717,9 @@ function addInteractiveAnimations() {
     }
 }
 
-// Add some easter eggs
+// Add keyboard shortcuts
 document.addEventListener('keydown', function(e) {
-    // Konami code easter egg
+    // Konami code easter egg for Hatay Büyükşehir
     const konamiCode = [38, 38, 40, 40, 37, 39, 37, 39, 66, 65];
     if (!window.konamiSequence) window.konamiSequence = [];
     
@@ -640,13 +729,23 @@ document.addEventListener('keydown', function(e) {
     }
     
     if (window.konamiSequence.join(',') === konamiCode.join(',')) {
-        showNotification('🎉 Hatay Büyükşehir Belediyesi Easter Egg! Tebrikler!', 'success');
-        createConfetti();
+        showNotification('🎉 Hatay Büyükşehir Belediyesi Gizli Kod Bulundu! Tebrikler!', 'success');
+        createMegaConfetti();
         window.konamiSequence = [];
+    }
+    
+    // Quick shortcuts
+    if (e.ctrlKey || e.metaKey) {
+        switch(e.key) {
+            case 'r':
+                e.preventDefault();
+                scrollToBooking();
+                break;
+        }
     }
 });
 
-// Performance optimization
+// Performance optimization and lazy loading
 document.addEventListener('DOMContentLoaded', function() {
     // Lazy load background images
     const heroSection = document.querySelector('.hero-bg');
@@ -657,4 +756,50 @@ document.addEventListener('DOMContentLoaded', function() {
         };
         img.src = 'https://images.unsplash.com/photo-1574629810360-7efbbe195018?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&q=80';
     }
+    
+    // Add loading indicator
+    document.body.classList.add('loaded');
+});
+
+// Add mouse trail effect (optional enhancement)
+let mouseTrail = [];
+document.addEventListener('mousemove', function(e) {
+    mouseTrail.push({x: e.clientX, y: e.clientY, time: Date.now()});
+    
+    // Keep only recent trail points
+    mouseTrail = mouseTrail.filter(point => Date.now() - point.time < 500);
+});
+
+// Auto-save form data to localStorage
+function saveFormData() {
+    const formData = {
+        name: document.getElementById('name').value,
+        phone: document.getElementById('phone').value,
+        notes: document.getElementById('notes').value
+    };
+    localStorage.setItem('hatayReservationForm', JSON.stringify(formData));
+}
+
+function loadFormData() {
+    try {
+        const savedData = localStorage.getItem('hatayReservationForm');
+        if (savedData) {
+            const formData = JSON.parse(savedData);
+            document.getElementById('name').value = formData.name || '';
+            document.getElementById('phone').value = formData.phone || '';
+            document.getElementById('notes').value = formData.notes || '';
+        }
+    } catch (e) {
+        // Ignore errors
+    }
+}
+
+// Load saved form data on page load
+document.addEventListener('DOMContentLoaded', loadFormData);
+
+// Save form data on input
+['name', 'phone', 'notes'].forEach(fieldId => {
+    document.addEventListener('DOMContentLoaded', () => {
+        document.getElementById(fieldId).addEventListener('input', saveFormData);
+    });
 });
