@@ -1,0 +1,14 @@
+GitHub Repository oluşturduktan sonra bu komutları çalıştır:
+
+git remote add origin https://github.com/KULLANICI_ADIN/hatay-halisaha.git
+git push -u origin main
+
+Sonra GitHub Pages için:
+1. Repository Settings'e git
+2. Sol menüden "Pages" seç
+3. Source: "Deploy from a branch" seç
+4. Branch: "main" seç
+5. Folder: "/ (root)" seç
+6. Save tıkla
+
+Link: https://KULLANICI_ADIN.github.io/hatay-halisaha/
